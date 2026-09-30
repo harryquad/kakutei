@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>減価償却 計算ツール【個人事業主・2026年対応】｜パソコン・車の耐用年数と毎年の経費</title>
+<meta name="description" content="パソコン・車・カメラなどの購入金額と購入月を入れるだけで、減価償却費（定額法）を年ごとに計算。10万円未満・一括償却・少額減価償却資産の特例（2026年4月以降は40万円未満）の判定や、中古資産・家事按分にも対応した無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kakutei/genka/">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/kakutei/">副業・フリーランスの確定申告 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>減価償却 計算ツール</h1>
+  <p class="lead">仕事で使うパソコンや車などを買ったとき、金額によっては一度に経費にできず、何年かに分けて経費にします（減価償却）。購入金額と購入月から、<strong>毎年の経費の額</strong>を計算します。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label for="asset">買ったもの</label>
+        <select id="asset">
+          <option value="4">パソコン（4年）</option>
+          <option value="5">サーバー・プリンター・カメラ（5年）</option>
+          <option value="10">スマートフォン・電話機（10年）</option>
+          <option value="8">机・椅子など（木製・その他）（8年）</option>
+          <option value="15">机・椅子など（金属製）（15年）</option>
+          <option value="6">普通自動車（6年）</option>
+          <option value="4c">軽自動車（4年）</option>
+          <option value="5s">ソフトウェア（5年）</option>
+          <option value="custom">そのほか（耐用年数を入力）</option>
+        </select>
+      </div>
+      <div class="field" id="lifeField" hidden><label for="life">耐用年数</label><input type="number" id="life" min="2" max="50" value="5"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="price">購入金額（取得価額）</label><input type="number" id="price" min="0" value="250000">
+        <div class="hint">円単位。免税事業者・税込経理なら税込、税抜経理なら税抜</div></div>
+      <div class="field"><label for="date">使い始めた月</label><input type="month" id="date"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="used">中古で買った場合の経過年数</label><input type="number" id="used" min="0" max="50" value="0">
+        <div class="hint">新品なら0。中古は「簡便法」で耐用年数を計算します</div></div>
+      <div class="field"><label for="ratio">仕事で使う割合（%）</label><input type="number" id="ratio" min="0" max="100" value="100"></div>
+    </div>
+    <div class="field">
+      <label for="blue">申告の方法</label>
+      <select id="blue"><option value="blue">青色申告</option><option value="white">白色申告</option></select>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>減価償却のよくある質問</h2>
+    <h3>いくらから減価償却が必要？</h3>
+    <p>10万円未満のものは、買った年に全額を経費にできます。10万円以上20万円未満なら、3年で均等に経費にする「一括償却」も選べます。青色申告の場合は「少額減価償却資産の特例」で、2026年4月1日以降に買った40万円未満のもの（それより前は30万円未満）を、年合計300万円まで一度に経費にできます。</p>
+    <h3>耐用年数とは？</h3>
+    <p>何年に分けて経費にするかを決める年数で、国の決まり（耐用年数表）で種類ごとに決まっています。パソコンは4年、普通自動車（新車）は6年などです。</p>
+    <h3>中古の場合は？</h3>
+    <p>中古で買ったものは「簡便法」で耐用年数を短くできます。経過年数が耐用年数より短ければ「（耐用年数 − 経過年数）＋ 経過年数 × 20%」、耐用年数をすべて過ぎていれば「耐用年数 × 20%」（1年未満の端数は切り捨て、最短2年）です。4年落ちの中古車なら2年で経費にでき、節税に使われることがあります。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>個人事業主の減価償却の原則である「定額法」での計算です。耐用年数は代表的なものを載せています。正確な耐用年数は国税庁の耐用年数表でご確認ください。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const now = new Date();
+$("date").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+$("asset").addEventListener("change", () => { $("lifeField").hidden = $("asset").value !== "custom"; });
+
+// 中古資産の耐用年数（簡便法）
+function usedLife(life, used) {
+  if (!used) return life;
+  const y = used >= life ? Math.floor(life * 0.2) : Math.floor(life - used + used * 0.2);
+  return Math.max(2, y);
+}
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const price = Math.floor(num("price"));
+  const [yy, mm] = ($("date").value || "").split("-").map(Number);
+  if (!price || !yy) { out.innerHTML = '<p class="err">購入金額と使い始めた月を入力してください。</p>'; return; }
+  const a = $("asset").value;
+  const baseLife = a === "custom" ? Math.max(2, Math.floor(num("life"))) : parseInt(a, 10);
+  const life = usedLife(baseLife, Math.floor(num("used")));
+  const ratio = Math.min(100, num("ratio")) / 100;
+  const blue = $("blue").value === "blue";
+  const smallLimit = (yy > 2026 || (yy === 2026 && mm >= 4)) ? 400000 : 300000;
+
+  let method, rows = [];
+  if (price < 100000) {
+    method = "10万円未満のため、使い始めた年に全額を経費にできます（消耗品費など）。";
+    rows = [[yy, price]];
+  } else if (blue && price < smallLimit) {
+    method = `青色申告の「少額減価償却資産の特例」で、使い始めた年に全額を経費にできます（${smallLimit / 10000}万円未満、年合計300万円まで）。分けて経費にしたい場合は、下の定額法の表も参考にしてください。`;
+    rows = [[yy, price]];
+  }
+  // 定額法（償却率は1÷耐用年数を小数第3位で切り上げ）
+  const rate = Math.ceil(1000 / life) / 1000;
+  const yearly = Math.ceil(price * rate);
+  const sl = [];
+  let book = price, y = yy, first = true;
+  while (book > 1 && sl.length < 60) {
+    const months = first ? 13 - mm : 12;
+    let dep = Math.ceil(yearly * months / 12);
+    if (book - dep < 1) dep = book - 1;
+    sl.push([y, dep]); book -= dep; y++; first = false;
+  }
+  const oneShot = price >= 100000 && price < 200000;
+  if (!rows.length) {
+    method = `定額法で、${life}年（償却率${rate.toFixed(3)}）に分けて経費にします。${oneShot ? "20万円未満なので、3年で均等に経費にする「一括償却」も選べます（下の表）。" : ""}`;
+    rows = sl;
+  }
+  const table = (list, title) => `<h2 style="margin-top:14px">${title}</h2><table class="info">
+    <tr><th>年</th><th class="num">減価償却費</th><th class="num">経費にできる額（仕事の割合${Math.round(ratio * 100)}%）</th></tr>
+    ${list.map(([yr, d]) => `<tr><td>${yr}年</td><td class="num">${yen(d)}</td><td class="num">${yen(Math.floor(d * ratio))}</td></tr>`).join("")}</table>`;
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat good"><div class="k">${yy}年に経費にできる額</div><div class="v">${yen(Math.floor(rows[0][1] * ratio))}</div></div>
+      <div class="stat"><div class="k">耐用年数${num("used") ? "（中古・簡便法）" : ""}</div><div class="v">${life}年</div></div>
+      <div class="stat"><div class="k">購入金額</div><div class="v">${yen(price)}</div></div>
+    </div>
+    <p>${method}</p>
+    ${table(rows, rows === sl ? "定額法の年ごとの経費" : "経費にする額")}
+    ${rows !== sl && price >= 100000 ? table(sl, "（参考）定額法で分けた場合") : ""}
+    ${oneShot ? table([0, 1, 2].map(i => [yy + i, Math.floor(price / 3) + (i === 0 ? price % 3 : 0)]), "（参考）一括償却（3年で均等）") : ""}
+    <p class="note">定額法の最後の年は、帳簿上の価額を1円残します（備忘価額）。使うのをやめて処分した年に、残りの1円も経費にできます。</p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

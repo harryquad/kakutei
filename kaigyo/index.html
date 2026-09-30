@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>開業届 出すべき？判定ツール｜副業・フリーランスのメリット・デメリットと提出期限</title>
+<meta name="description" content="状況を選ぶだけで、開業届を出すべきか、青色申告の申請はいつまでかを判定。失業保険・扶養・副業への影響などの注意点と、開業届・青色申告承認申請書の提出期限を自動で計算する無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kakutei/kaigyo/">
+<link rel="stylesheet" href="../assets/style.css">
+<style>.pros li{margin-bottom:6px}</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/kakutei/">副業・フリーランスの確定申告 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>開業届 出すべき？判定ツール</h1>
+  <p class="lead">あなたの状況から、<strong>開業届を出すメリットと注意点</strong>を整理し、<strong>開業届と青色申告承認申請書の提出期限</strong>を計算します。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="start">事業を始めた日（予定日）</label><input type="date" id="start"></div>
+      <div class="field"><label for="profit">1年間の所得の見込み（売上 − 経費）</label><input type="number" id="profit" min="0" value="100">
+        <div class="hint">万円単位</div></div>
+    </div>
+    <div class="q"><div class="t">あてはまるものを選んでください</div>
+      <div class="checks">
+        <label><input type="checkbox" id="side">会社員の副業として始める</label>
+        <label><input type="checkbox" id="kyufu">失業保険（基本手当）をもらっている、またはもらう予定</label>
+        <label><input type="checkbox" id="fuyo">家族の健康保険の扶養に入っている</label>
+        <label><input type="checkbox" id="continuous">継続して仕事を受ける予定（単発ではない）</label>
+      </div></div>
+    <button id="calc" style="margin-top:12px">判定する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>開業届のよくある質問</h2>
+    <h3>開業届を出さないとどうなる？</h3>
+    <p>開業届を出していなくても罰則はなく、確定申告もできます。ただし、青色申告（最大65万円の控除）を使うには、開業届とあわせて青色申告承認申請書を出す必要があります。</p>
+    <h3>副業でも開業届を出せる？</h3>
+    <p>出せます。事業として継続して行う副業なら、開業届と青色申告の申請をすると、事業所得として最大65万円の控除が受けられます。開業届を出したことが、税務署から会社に伝わることはありません。</p>
+    <h3>開業届の出し方は？</h3>
+    <p>「個人事業の開業・廃業等届出書」を、住所地の税務署に提出します。e-Tax（オンライン）でも出せます。会計ソフトの中には、質問に答えるだけで開業届と青色申告承認申請書を無料で作れるサービスもあります。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>一般的な取り扱いにもとづく判定です。失業保険・健康保険の扶養の扱いは、ハローワークや加入している健康保険組合によって異なる場合があります。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const t = new Date();
+$("start").value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+const WD = ["日", "月", "火", "水", "木", "金", "土"];
+const fmt = d => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+// 期限が土日なら翌月曜（祝日・年末年始は考慮しない）
+const due = d => { const x = new Date(d); while (x.getDay() === 0 || x.getDay() === 6) x.setDate(x.getDate() + 1); return x; };
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const v = $("start").value;
+  if (!v) { out.innerHTML = '<p class="err">事業を始めた日を入力してください。</p>'; return; }
+  const [y, m, d] = v.split("-").map(Number);
+  const start = new Date(y, m - 1, d);
+  const profit = num("profit") * MAN;
+  const kaigyoDue = due(new Date(y, m, d));             // 開業日から1ヶ月以内
+  const early = m === 1 && d <= 15;
+  const blueDue = due(early ? new Date(y, 2, 15) : new Date(y, m + 1, d)); // 1/15以前開業はその年の3/15、それ以外は2ヶ月以内
+  const late = blueDue < new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  const nextBlue = due(new Date(y + 1, 2, 15));
+
+  const cautions = [];
+  if ($("kyufu").checked) cautions.push("<strong>失業保険</strong>：開業届を出して事業を始めると、原則として「就職した」扱いになり、それ以降の失業保険はもらえません。条件を満たせば「再就職手当」をまとめてもらえることがあるので、開業届を出す前にハローワークに相談しましょう。");
+  if ($("fuyo").checked) cautions.push("<strong>扶養</strong>：健康保険組合によっては、開業届を出すと収入に関係なく扶養から外れる場合があります。出す前に、家族の勤務先の健康保険組合の基準を確認しましょう。");
+  if ($("side").checked) cautions.push("<strong>副業</strong>：開業届を出したことが税務署から会社に伝わることはありません。ただし、会社の就業規則で副業のルールを確認しておきましょう。");
+  const small = profit < 200000;
+  const save = Math.min(650000, profit) * 0.3;
+  const recommend = $("continuous").checked && !small;
+
+  out.innerHTML = `
+    <p class="verdict ${recommend ? "ok" : "ng"}">${recommend ? "開業届と青色申告の申請をおすすめします" : small ? "急いで出す必要はありません" : "状況に合わせて判断しましょう"}</p>
+    <table class="info">
+      <tr><td>開業届の提出期限</td><td>${fmt(kaigyoDue)}まで<br><small style="color:var(--muted)">事業を始めた日から1ヶ月以内（過ぎても受け付けてもらえます）</small></td></tr>
+      <tr><td>青色申告承認申請書の期限</td><td>${fmt(blueDue)}まで${late ? `<br><span class="err">期限を過ぎているため、${y}年分は白色申告になります。${y + 1}年分から青色申告にするなら ${fmt(nextBlue)} までに提出します。</span>` : ""}<br><small style="color:var(--muted)">${early ? "1月15日までに開業した場合は、その年の3月15日まで" : "事業を始めた日から2ヶ月以内"}</small></td></tr>
+    </table>
+    <h2 style="margin-top:16px">メリット</h2>
+    <ul class="pros">
+      <li>青色申告で最大65万円の控除。あなたの所得なら、税金・保険料が年<strong>約${yen(save)}</strong>安くなる目安です（所得税・住民税・国保の合計で約30%として計算）</li>
+      <li>赤字を3年間繰り越せる（青色申告の場合）</li>
+      <li>屋号で銀行口座を作れるなど、仕事の信用につながる</li>
+    </ul>
+    ${cautions.length ? `<h2 style="margin-top:16px">注意点</h2><ul class="pros">${cautions.map(c => `<li>${c}</li>`).join("")}</ul>` : ""}
+    ${small ? '<p class="note">所得が年20万円未満の小さな副業なら、開業届を出さずに雑所得として申告するのも一般的です。</p>' : ""}
+    <p class="note">青色申告にするといくら安くなるかを詳しく計算するなら → <a href="/kakutei/aoiro/">青色申告の節税額 計算</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

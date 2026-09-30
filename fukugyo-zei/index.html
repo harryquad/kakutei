@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>副業の税金 計算ツール【2026年分】｜副業でいくら稼ぐと税金はいくら？手取りは？</title>
+<meta name="description" content="本業の年収と副業の売上・経費を入れるだけで、副業によって増える所得税・住民税と、副業の手取りを計算。業務委託・アフィリエイトなどの雑所得・事業所得と、アルバイトの給与の両方に対応した無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kakutei/fukugyo-zei/">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/kakutei/">副業・フリーランスの確定申告 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>副業の税金・手取り 計算（2026年分）</h1>
+  <p class="lead">本業の年収と副業の売上・経費から、副業によって<strong>増える所得税・住民税</strong>と、<strong>副業で手元に残る金額</strong>を計算します。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="main">本業の年収（給与の額面）</label><input type="number" id="main" min="0" value="450">
+        <div class="hint">万円単位</div></div>
+      <div class="field"><label for="age">年齢</label><select id="age"><option value="u40">39歳以下</option><option value="40">40〜64歳</option></select></div>
+    </div>
+    <div class="field">
+      <label for="kind">副業の種類</label>
+      <select id="kind">
+        <option value="biz">業務委託・アフィリエイト・ネット販売など（雑所得・事業所得）</option>
+        <option value="wage">アルバイト・パート（給与）</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="field"><label for="sales" id="salesLabel">副業の売上（報酬）</label><input type="number" id="sales" min="0" value="60">
+        <div class="hint">万円単位（年間）</div></div>
+      <div class="field" id="costField"><label for="cost">副業の経費</label><input type="number" id="cost" min="0" value="10">
+        <div class="hint">万円単位（年間）</div></div>
+    </div>
+    <div class="row">
+      <div class="field" id="whField"><label for="wh">報酬から源泉徴収された税金</label><input type="number" id="wh" min="0" value="0">
+        <div class="hint">円単位。支払調書や入金明細で確認（ない場合は0）</div></div>
+      <div class="field"><label for="ded">iDeCoなどの掛金（年額）</label><input type="number" id="ded" min="0" value="0">
+        <div class="hint">円単位</div></div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>副業の税金のよくある質問</h2>
+    <h3>副業の税金は何％？</h3>
+    <p>副業の所得には、本業の給与と合わせた所得に対して、所得税（5〜45%、復興特別所得税込みで約5.1〜45.9%）と住民税（10%）がかかります。本業の年収が400〜600万円くらいの人なら、副業の所得の約20〜30%が税金の目安です。</p>
+    <h3>経費にできるものは？</h3>
+    <p>副業のために使ったお金です。たとえば、仕事に使うパソコン・ソフト・書籍、通信費、仕事場の家賃の一部、交通費などです。自宅と共用のものは、仕事で使った割合だけを経費にします（家事按分）。</p>
+    <h3>会社員の副業で社会保険料は増える？</h3>
+    <p>業務委託などの雑所得・事業所得なら、会社の社会保険料は増えません。アルバイトの場合も、ふつうは副業先の社会保険に入らない働き方なら増えません。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>令和8年（2026年）分の所得税・令和9年度分の住民税をもとにした、扶養家族がいない会社員の場合の概算です。社会保険料は本業の年収の約15%（40歳以上は約15.8%）として計算しています。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+$("kind").addEventListener("change", () => {
+  const wage = $("kind").value === "wage";
+  $("costField").hidden = wage; $("whField").hidden = wage;
+  $("salesLabel").textContent = wage ? "アルバイトの年収（額面）" : "副業の売上（報酬）";
+});
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const main = num("main") * MAN;
+  const wage = $("kind").value === "wage";
+  const sales = num("sales") * MAN, cost = wage ? 0 : num("cost") * MAN;
+  if (!sales) { out.innerHTML = '<p class="err">副業の売上を入力してください。</p>'; return; }
+  const social = socialEstimate(main, $("age").value === "40");
+  const ded = num("ded");
+  const before = taxes({ salary: main, other: 0, social, ded });
+  const after = wage ? taxes({ salary: main + sales, other: 0, social, ded }) : taxes({ salary: main, other: Math.max(0, sales - cost), social, ded });
+  const upIT = after.incomeTax - before.incomeTax, upRT = after.residentTax - before.residentTax;
+  const profit = sales - cost;
+  const net = profit - upIT - upRT;
+  const wh = wage ? 0 : num("wh");
+  const settle = upIT - wh;
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat good"><div class="k">副業で手元に残る金額</div><div class="v">${yen(net)}</div></div>
+      <div class="stat warn"><div class="k">増える税金の合計</div><div class="v">${yen(upIT + upRT)}</div></div>
+      <div class="stat"><div class="k">税金の割合（副業の所得に対して）</div><div class="v">${profit > 0 ? ((upIT + upRT) / profit * 100).toFixed(1) : "0"}%</div></div>
+    </div>
+    <table class="info">
+      <tr><td>副業の所得（${wage ? "給与" : "売上 − 経費"}）</td><td class="num">${yen(profit)}</td></tr>
+      <tr><td>増える所得税</td><td class="num">${yen(upIT)}</td></tr>
+      <tr><td>増える住民税（翌年6月から）</td><td class="num">${yen(upRT)}</td></tr>
+      <tr><td>あなたの所得税率</td><td class="num">${Math.round(after.rate * 100)}%</td></tr>
+      ${!wage && wh ? `<tr><td>すでに源泉徴収された税金</td><td class="num">${yen(wh)}</td></tr>
+      <tr><td>確定申告で${settle >= 0 ? "追加で払う" : "戻ってくる"}所得税</td><td class="num">${yen(Math.abs(settle))}</td></tr>` : ""}
+    </table>
+    ${!wage && profit <= 200000 && profit > 0 ? '<p class="note">副業の所得が20万円以下なので、所得税の確定申告は不要です（ほかに確定申告をする理由がない場合）。ただし住民税の申告は必要です。</p>' : ""}
+    ${wage ? '<p class="note">2か所から給与をもらっている場合、年末調整をしない方の給与と給与以外の所得の合計が20万円を超えると、確定申告が必要です。</p>' : ""}
+    <p class="note">確定申告が必要かどうかは → <a href="/kakutei/">副業の確定申告 必要？判定</a> ／ 経費を増やしたいなら → <a href="/kakutei/anbun/">家事按分 計算</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

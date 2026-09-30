@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>副業の確定申告 必要？判定ツール【2026年分】｜20万円ルールと住民税の申告</title>
+<meta name="description" content="本業の働き方と副業の種類・所得を選ぶだけで、副業の確定申告が必要か（20万円ルール）と、住民税の申告が必要かを判定。2026年分（2027年2月16日〜3月15日提出）の期限もわかる無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kakutei/">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/kakutei/">副業・フリーランスの確定申告 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>副業の確定申告 必要？判定ツール（2026年分）</h1>
+  <p class="lead">質問に答えるだけで、副業の<strong>確定申告が必要か</strong>（いわゆる<strong>20万円ルール</strong>）と、見落としがちな<strong>住民税の申告</strong>が必要かを判定します。</p>
+
+  <div class="card">
+    <div class="q"><div class="t">① 本業の働き方は？</div>
+      <select id="main">
+        <option value="employee">会社員・公務員（勤務先で年末調整を受ける。給与は1か所）</option>
+        <option value="employee2">会社員で、給与をもらっている会社が2か所以上（アルバイトの掛け持ちなど）</option>
+        <option value="freelance">個人事業主・フリーランス</option>
+        <option value="none">給与の収入なし（学生・主婦・無職など）</option>
+      </select></div>
+    <div class="q" id="qSalary"><div class="t">② 本業の年収（給与）は2,000万円を超えますか？</div>
+      <div class="checks"><label><input type="radio" name="over" value="no" checked>いいえ</label><label><input type="radio" name="over" value="yes">はい</label></div></div>
+    <div class="q"><div class="t">③ 副業の所得（売上・報酬から経費を引いた金額）</div>
+      <input type="number" id="side" min="0" value="30">
+      <div class="hint">万円単位。業務委託・アフィリエイト・ネット販売・せどり・ポイ活以外の副収入など。<strong>売上ではなく「売上 − 経費」</strong>です</div></div>
+    <div class="q" id="qSub"><div class="t">④ 本業以外の会社からもらう給与（アルバイト代など）</div>
+      <input type="number" id="subWage" min="0" value="0">
+      <div class="hint">万円単位（額面）。ない場合は0</div></div>
+    <div class="q"><div class="t">⑤ 次のどれかを受けたいですか？</div>
+      <div class="checks">
+        <label><input type="checkbox" class="want">医療費控除</label>
+        <label><input type="checkbox" class="want">住宅ローン控除（1年目）</label>
+        <label><input type="checkbox" class="want">ふるさと納税（6自治体以上）</label>
+        <label><input type="checkbox" class="want" id="refund">報酬から源泉徴収された税金を取り戻したい</label>
+      </div></div>
+    <button id="judge" style="margin-top:12px">判定する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>副業の確定申告のよくある質問</h2>
+    <h3>「20万円ルール」とは？</h3>
+    <p>年末調整を受けている会社員は、給与以外の所得（副業の売上から経費を引いた金額など）が年20万円以下なら、所得税の確定申告をしなくてよいというルールです。売上が20万円を超えていても、経費を引いた所得が20万円以下なら対象になります。</p>
+    <h3>20万円以下なら何もしなくていい？</h3>
+    <p>いいえ。20万円ルールは所得税だけのルールで、<strong>住民税には20万円ルールがありません</strong>。副業の所得が少しでもあれば、住んでいる市区町村に住民税の申告が必要です。申告しないと、あとから住民税の追加の請求が来ることがあります。</p>
+    <h3>副業を会社に知られたくない場合は？</h3>
+    <p>副業の分の住民税が会社の給与から引かれると、住民税の額から副業に気づかれることがあります。確定申告書（または住民税の申告書）で、給与以外の所得の住民税を「自分で納付（普通徴収）」にすると、副業の分の住民税を自分で払えます。ただし、市区町村によっては対応していないこともあります。</p>
+    <h3>確定申告の期限は？</h3>
+    <p>2026年分の確定申告は、<strong>2027年2月16日（火）〜3月15日（月）</strong>です。税金が戻ってくる還付申告だけなら、2027年1月1日から提出できます。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>国税庁の「給与所得者で確定申告が必要な人」の基準などをもとにした一般的な判定です。個別の事情によって異なる場合があるので、詳しくは税務署・税理士にご確認ください。</footer>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+$("main").addEventListener("change", () => {
+  const m = $("main").value;
+  $("qSalary").hidden = !(m === "employee" || m === "employee2");
+  $("qSub").hidden = m === "freelance" || m === "none";
+});
+
+function judge() {
+  const out = $("result");
+  out.hidden = false;
+  const m = $("main").value;
+  const side = num("side") * MAN, sub = num("subWage") * MAN;
+  const over = document.querySelector("input[name=over]:checked").value === "yes";
+  const wants = [...document.querySelectorAll(".want")].filter(c => c.checked).length;
+  let need, why;
+  if (m === "freelance") {
+    need = side > basicIT(side);
+    why = need ? "個人事業主・フリーランスで、所得が基礎控除（104万円）を超えるため" : "所得が基礎控除（104万円）以下のため、所得税はかかりません";
+  } else if (m === "none") {
+    const inc = salaryIncome(sub) + side;
+    need = inc > basicIT(inc) && side > 0;
+    why = need ? "年末調整を受けておらず、所得が基礎控除を超えるため" : "所得が基礎控除以下のため、所得税はかかりません";
+  } else if (over) {
+    need = true; why = "給与の年収が2,000万円を超える人は、全員確定申告が必要です";
+  } else if (m === "employee2") {
+    need = sub + side > 200000;
+    why = need ? "年末調整をしない2か所目の給与と、給与以外の所得の合計が20万円を超えるため" : "2か所目の給与と給与以外の所得の合計が20万円以下のため（20万円ルール）";
+  } else {
+    need = side > 200000;
+    why = need ? "給与以外の所得が20万円を超えるため" : "給与以外の所得が20万円以下のため（20万円ルール）";
+  }
+  const byChoice = !need && wants > 0 && (side > 0 || sub > 0);
+  const juminNeed = !need && !byChoice && (side > 0 || sub > 0);
+
+  out.innerHTML = `
+    <p class="verdict ${need || byChoice ? "ng" : "ok"}">${need ? "確定申告が必要です" : byChoice ? "確定申告をします（副業の所得もすべて書きます）" : "所得税の確定申告は不要です"}</p>
+    <table class="info">
+      <tr><td>所得税の確定申告</td><td>${need ? "必要" : byChoice ? "する（医療費控除などを受けるため）" : "不要"}<br><small style="color:var(--muted)">${why}</small></td></tr>
+      <tr><td>住民税の申告</td><td>${juminNeed ? "<strong>必要</strong>（市区町村へ。確定申告をしない場合も、住民税には20万円ルールがありません）" : need || byChoice ? "不要（確定申告をすれば、市区町村に情報が伝わります）" : "不要"}</td></tr>
+      <tr><td>提出期限</td><td>${need || byChoice ? "2027年2月16日（火）〜3月15日（月）" : juminNeed ? "2027年3月15日（月）まで（市区町村の窓口など）" : "—"}</td></tr>
+    </table>
+    ${byChoice ? '<p class="note">医療費控除などを受けるために確定申告をする場合は、20万円以下の副業の所得も含めて申告する必要があります。</p>' : ""}
+    ${(need || byChoice || juminNeed) && m !== "freelance" && m !== "none" ? '<p class="note">副業の分の住民税を自分で払いたい場合は、申告書の「住民税に関する事項」で<strong>「自分で納付」</strong>を選びます。</p>' : ""}
+    ${$("refund").checked ? '<p class="note">報酬から源泉徴収（10.21%）された税金は、確定申告をすると、払いすぎた分が戻ってくることがあります。</p>' : ""}
+    <p class="note">副業の税金がいくらになるかは → <a href="/kakutei/fukugyo-zei/">副業の税金・手取り 計算</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("judge").addEventListener("click", judge);
+</script>
+</body>
+</html>

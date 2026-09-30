@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>青色申告 節税額 計算【2026年分・2027年分】｜65万円控除でいくら安くなる？</title>
+<meta name="description" content="売上と経費を入れるだけで、白色申告と比べて青色申告（65万円・55万円・10万円控除）で所得税・住民税・国民健康保険料がいくら安くなるかを計算。2027年分からの75万円控除にも対応した無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kakutei/aoiro/">
+<link rel="stylesheet" href="../assets/style.css">
+<style>tr.best td{background:var(--good-soft);font-weight:700}</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/kakutei/">副業・フリーランスの確定申告 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>青色申告の節税額 計算</h1>
+  <p class="lead">白色申告と比べて、<strong>青色申告にするとどれくらい税金・保険料が安くなるか</strong>を計算します。2026年分（最大65万円控除）と、2027年分から始まる<strong>最大75万円控除</strong>の両方に対応しています。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="sales">年間の売上</label><input type="number" id="sales" min="0" value="500">
+        <div class="hint">万円単位</div></div>
+      <div class="field"><label for="cost">年間の経費</label><input type="number" id="cost" min="0" value="100">
+        <div class="hint">万円単位</div></div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="type">働き方</label>
+        <select id="type"><option value="free">個人事業主・フリーランス（国民健康保険）</option><option value="side">会社員の副業（事業所得）</option></select>
+      </div>
+      <div class="field" id="mainField" hidden><label for="main">本業の年収（給与の額面）</label><input type="number" id="main" min="0" value="450">
+        <div class="hint">万円単位</div></div>
+      <div class="field" id="ageField"><label for="age">年齢</label><select id="age"><option value="u40">39歳以下</option><option value="40">40〜64歳</option></select></div>
+    </div>
+    <div class="field">
+      <label for="year">対象の年</label>
+      <select id="year"><option value="2026">2026年分（2027年3月に申告）</option><option value="2027">2027年分（2028年3月に申告）</option></select>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>青色申告のよくある質問</h2>
+    <h3>青色申告の65万円控除の条件は？</h3>
+    <p>2026年分は、①複式簿記で帳簿をつける、②貸借対照表と損益計算書を確定申告書に付ける、③期限内に申告する、④e-Taxで申告する（または優良な電子帳簿保存をする）ことが条件です。紙で提出すると55万円になります。会計ソフトを使えば、複式簿記の知識がなくても帳簿がつけられます。</p>
+    <h3>2027年分から何が変わる？</h3>
+    <p>2027年分からは、e-Taxで期限内に申告すると65万円、それに加えて帳簿を優良な電子帳簿として保存すると75万円の控除になります。複式簿記でも紙で提出した場合は、55万円から10万円に大きく下がります。</p>
+    <h3>青色申告にするには？</h3>
+    <p>「所得税の青色申告承認申請書」を税務署に出します。期限は、青色申告をしたい年の3月15日まで（1月16日以降に開業した場合は、開業から2ヶ月以内）です。2027年分から青色申告にしたい場合は、2027年3月15日までに提出します。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>令和8年（2026年）分の所得税・令和9年度分の住民税をもとにした、扶養家族がいない場合の概算です。2027年分の計算も2026年と同じ税率・控除額で計算しています。国民健康保険料はよくある料率で計算した目安です。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+$("type").addEventListener("change", () => { $("mainField").hidden = $("type").value !== "side"; });
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const profit = Math.max(0, (num("sales") - num("cost")) * MAN);
+  if (!profit) { out.innerHTML = '<p class="err">売上と経費を入力してください（売上 − 経費がプラスになる必要があります）。</p>'; return; }
+  const side = $("type").value === "side";
+  const over40 = $("age").value === "40";
+  const main = side ? num("main") * MAN : 0;
+  const mainSocial = socialEstimate(main, over40);
+  const pension = side ? 0 : PENSION_2026;
+  const plans = $("year").value === "2026"
+    ? [["白色申告", 0, ""], ["青色申告（簡易な帳簿）", 100000, "帳簿は簡単でOK"], ["青色申告（複式簿記・紙で提出）", 550000, "複式簿記＋紙の申告書"], ["青色申告（複式簿記・e-Tax）", 650000, "複式簿記＋e-Tax"]]
+    : [["白色申告", 0, ""], ["青色申告（簡易な帳簿、または紙で提出）", 100000, "2027年分から紙の提出は10万円に"], ["青色申告（e-Tax）", 650000, "複式簿記＋期限内にe-Tax"], ["青色申告（e-Tax＋優良な電子帳簿）", 750000, "会計ソフトの電子帳簿保存に対応が必要"]];
+
+  const rows = plans.map(([name, dedMax, note]) => {
+    const ded = Math.min(dedMax, profit);
+    const income = profit - ded;
+    const kokuho = side ? 0 : kokuhoEstimate(income, over40);
+    const t = taxes({ salary: main, other: income, social: mainSocial + kokuho + pension });
+    return { name, note, ded, it: t.incomeTax, rt: t.residentTax, kokuho, total: t.incomeTax + t.residentTax + kokuho };
+  });
+  const white = rows[0].total;
+  const best = rows[rows.length - 1];
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat good"><div class="k">いちばん安くなる額（年間）</div><div class="v">${yen(white - best.total)}</div></div>
+      <div class="stat"><div class="k">その方法</div><div class="v" style="font-size:1rem">${best.name}</div></div>
+      <div class="stat"><div class="k">売上 − 経費</div><div class="v">${yen(profit)}</div></div>
+    </div>
+    <div style="overflow-x:auto"><table class="info">
+      <tr><th>申告の方法</th><th class="num">控除額</th><th class="num">所得税</th><th class="num">住民税</th>${side ? "" : '<th class="num">国保（目安）</th>'}<th class="num">白色より安くなる額</th></tr>
+      ${rows.map(r => `<tr class="${r === best ? "best" : ""}"><td>${r.name}${r.note ? `<br><small style="color:var(--muted)">${r.note}</small>` : ""}</td><td class="num">${yen(r.ded)}</td><td class="num">${yen(r.it)}</td><td class="num">${yen(r.rt)}</td>${side ? "" : `<td class="num">${yen(r.kokuho)}</td>`}<td class="num">${yen(white - r.total)}</td></tr>`).join("")}
+    </table></div>
+    <p class="note">${side ? "会社員の副業は、会社の社会保険料が変わらないため、所得税と住民税の差だけを計算しています。" : "個人事業主は、所得が下がると国民健康保険料も下がるため、その分も含めています。"}青色申告の最大控除を受けるには、複式簿記の帳簿とe-Taxが必要です。会計ソフトを使うと、どちらも自動でできます。</p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>
